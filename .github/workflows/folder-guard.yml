@@ -1,0 +1,61 @@
+# Blocks any pull request that changes files outside the author's own folder.
+#
+# Uses pull_request_target so it always runs the copy of this file on `main`.
+# A student cannot switch the check off by editing it in their PR.
+# It never checks out or runs student code: it only reads the list of changed files.
+name: folder-guard
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  folder-guard:
+    name: folder-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main (roster + instructor list)
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          author_lc=$(echo "$AUTHOR" | tr '[:upper:]' '[:lower:]')
+
+          # Facilitators may change anything.
+          if grep -v '^#' .github/instructors.txt | tr '[:upper:]' '[:lower:]' | grep -qx "$author_lc"; then
+            echo "✅ $AUTHOR is a facilitator, so all changes are allowed."
+            exit 0
+          fi
+
+          # Find this student's folder in roster.csv (columns: id,first,last_initial,github,folder)
+          FOLDER=$(awk -F, -v u="$author_lc" 'NR>1 && $0 !~ /^#/ { g=tolower($4); gsub(/[ \r]/,"",g); f=$5; gsub(/[ \r]/,"",f); if (g==u) print f }' roster.csv | head -n1)
+
+          if [ -z "$FOLDER" ]; then
+            echo "::error::GitHub user '$AUTHOR' is not in roster.csv yet. Please tell your facilitator your GitHub username."
+            exit 1
+          fi
+
+          # Every changed path, plus the old path of any renamed or moved file.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | .filename, (.previous_filename // empty)' > changed.txt
+
+          BAD=$(grep -v "^students/$FOLDER/" changed.txt || true)
+
+          if [ -n "$BAD" ]; then
+            echo "::error::You can only change files inside students/$FOLDER/"
+            echo ""
+            echo "❌ These files are outside your folder. Move or remove them, then push again:"
+            echo "$BAD" | sed 's/^/   - /'
+            exit 1
+          fi
+
+          echo "✅ All $(wc -l < changed.txt | tr -d ' ') changed file(s) are inside students/$FOLDER/"

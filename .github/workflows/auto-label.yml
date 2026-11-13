@@ -1,0 +1,41 @@
+# Adds week and lab/homework labels to a PR automatically, using the branch
+# name (week-03/T4Y-C2-007) and the files changed (students/.../week-03/lab/...).
+# Never checks out or runs student code.
+name: auto-label
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename')
+          labels=""
+
+          # Weeks found in changed file paths, plus the branch name.
+          weeks=$( { echo "$files"; echo "$BRANCH"; } | grep -oE 'week-0[1-8]' | sort -u || true)
+          for w in $weeks; do labels="$labels,$w"; done
+
+          echo "$files" | grep -qE '/week-0[1-8]/lab/'      && labels="$labels,lab"      || true
+          echo "$files" | grep -qE '/week-0[1-8]/homework/' && labels="$labels,homework" || true
+
+          labels="${labels#,}"
+          if [ -n "$labels" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label "$labels"
+            echo "Added labels: $labels"
+          else
+            echo "No week folder found, so no labels added."
+          fi
