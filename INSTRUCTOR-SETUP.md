@@ -1,18 +1,28 @@
 # Facilitator setup and weekly routine
 
-Org: **`Tech4Youth-GIZ-Abuja`** (https://github.com/Tech4Youth-GIZ-Abuja) · Repo: **`tech4youth-training-cohort-2`** (private)
+Org: **`Tech4Youth-GIZ-Abuja`** (https://github.com/Tech4Youth-GIZ-Abuja) · Repo: **`tech4youth-training-cohort-2`** (public for now, private later)
 All names live in [`scripts/config.sh`](scripts/config.sh).
 
 ---
 
 ## A. One-time setup
 
-### 1. Organization plan
-The org already exists and is on the **Free** plan.
-Branch protection (rulesets) on a **private** repo needs **GitHub Team**. Options:
-- **GitHub for Nonprofits** gives Team for free: https://github.com/solutions/industry/nonprofits. Tech4Youth / GIZ may already qualify.
-- Pay for Team for the 2 months.
-- Until Team is active, `setup-github.sh` fails at the ruleset step. Everything else still works, but students *could* push straight to `main`.
+### 1. Organization plan: the repo is PUBLIC for now
+The org is on the **Free** plan. Rulesets on a **private** repo need **GitHub Team**,
+so the repo is **public** until the GitHub for Nonprofits Team plan is approved
+(https://github.com/solutions/industry/nonprofits).
+
+**While the repo is public, anyone on the internet can read it:**
+- Folders use **first name + last initial** only. Never put full names in the roster.
+- Students must not upload photos of themselves, phone numbers, addresses or other personal details.
+- `roster.csv` shows GitHub usernames publicly. Their GitHub profiles are public anyway.
+
+**When Team is active, switch to private:**
+1. Settings → General → Danger Zone → **Change visibility** → Private
+2. `bash scripts/setup-github.sh` (re-applies the ruleset; safe to run again)
+3. Check https://github.com/Tech4Youth-GIZ-Abuja/tech4youth-training-cohort-2/settings/rules shows `protect-main` as **Active**
+
+> ⚠️ If you switch to private **before** Team is active, the ruleset stops working and students could push straight to `main`.
 
 ### 2. Give the GitHub CLI org permissions
 ```bash
