@@ -127,7 +127,7 @@ For each PR you see the student's name and ID, their notes, the files and the te
 - When a student pushes a fix, their PR moves back to **Ready** on its own.
 - `bash scripts/review.sh list` shows only the queue. `bash scripts/review.sh 12` reviews only PR #12.
 - Every decision is added to **`../review-log.csv`**, outside the public repo. Use it for grades and attendance.
-- **folder-guard explains itself.** When it fails, it posts a plain-English comment on the PR with the wrong files and a link to the student's folder, and updates the comment to "✅ Fixed!" once they fix it. You don't need to reply to blocked PRs unless the student asks for help.
+- **Every PR gets a bot comment.** On success it confirms receipt and lists the files, with a tip if a file is not in `lab/` or `homework/`. When it fails, it posts a plain-English comment on the PR with the wrong files and a link to the student's folder, and updates the comment to "✅ Fixed!" once they fix it. You don't need to reply to blocked PRs unless the student asks for help.
 
 **Rhythm:** run it once after class and once before the next class. A batch of 29 intros takes about 15 minutes.
 

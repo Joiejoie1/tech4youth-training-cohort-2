@@ -87,8 +87,22 @@ jobs:
           fi
 
           echo "✅ All $(wc -l < changed.txt | tr -d ' ') changed file(s) are inside students/$FOLDER/"
-          # If an earlier run complained, tell the student it's fixed now.
-          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq '.[].body' | grep -qF "$MARK"; then
-            say "### 🤖 ✅ Fixed!
-          All your files are in your folder now. Your facilitator will review your work soon."
+          # Always confirm receipt, so every student gets a comment. One comment per PR, updated on each push.
+          HEAD="### 🤖 ✅ Received!"
+          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq '.[].body' 2>/dev/null | grep -qF "$MARK"; then
+            HEAD="### 🤖 ✅ Fixed! Received."
           fi
+          LIST=$(sed 's/^/- `/; s/$/`/' changed.txt)
+          TIP=""
+          if grep -v "/README.md$" changed.txt | grep -vqE "/week-0[1-8]/(lab|homework)/"; then
+            TIP="
+          💡 **Tip:** lab work goes in \`week-0X/lab/\` and homework in \`week-0X/homework/\`. Your facilitator may ask you to move a file."
+          fi
+          say "$HEAD
+          Thank you @$AUTHOR! Your files are in your own folder, \`students/$FOLDER/\`:
+          $LIST
+          $TIP
+
+          **What happens next:** your facilitator will review your work and comment here.
+          - Want to add or change something? Upload to the **same branch** and this pull request updates by itself.
+          - Questions? Write a comment here. 🙂"

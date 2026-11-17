@@ -47,7 +47,7 @@ Example: week 1 lab, student ID **T4Y-C2-007**.
 | You see | It means | What to do |
 |---|---|---|
 | 🟡 Yellow dot | The robot is checking | Wait about 30 seconds |
-| ✅ Green tick | Your files are in the right place | Wait for your facilitator to review |
+| ✅ Green tick + 🤖 comment | Your work arrived and is in the right place | Wait for your facilitator to review |
 | ❌ Red cross + 🤖 comment | A file is outside your folder | Read the robot's comment. It names the file and tells you how to fix it |
 | 🟠 **Changes requested** | Your facilitator wants a small fix | Read the comment, then fix it **on the same branch** (see section 3). Don't open a new pull request |
 | ✅ **Approved** + 🟣 **Merged** | Your work is accepted and saved | Well done! 🎉 |
