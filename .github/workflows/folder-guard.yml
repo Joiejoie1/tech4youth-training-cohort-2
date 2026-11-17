@@ -11,7 +11,8 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write   # to post a friendly comment explaining a failure
+  issues: write
 
 jobs:
   folder-guard:
@@ -29,6 +30,21 @@ jobs:
         run: |
           set -euo pipefail
           author_lc=$(echo "$AUTHOR" | tr '[:upper:]' '[:lower:]')
+          MARK='<!-- folder-guard-bot -->'
+
+          # Post (or update) one plain-English comment so students don't need to read logs.
+          say() {
+            existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+              --jq ".[] | select(.body | startswith(\"$MARK\")) | .id" | head -n1 || true)
+            body="$MARK
+          $1"
+            if [ -n "$existing" ]; then
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -f body="$body" >/dev/null || true
+            else
+              gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" >/dev/null || true
+            fi
+          }
+          fail() { echo "::error::$1"; say "$2"; exit 1; }
 
           # Facilitators may change anything.
           if grep -v '^#' .github/instructors.txt | tr '[:upper:]' '[:lower:]' | grep -qx "$author_lc"; then
@@ -40,8 +56,11 @@ jobs:
           FOLDER=$(awk -F, -v u="$author_lc" 'NR>1 && $0 !~ /^#/ { g=tolower($4); gsub(/[ \r]/,"",g); f=$5; gsub(/[ \r]/,"",f); if (g==u) print f }' roster.csv | head -n1)
 
           if [ -z "$FOLDER" ]; then
-            echo "::error::GitHub user '$AUTHOR' is not in roster.csv yet. Please tell your facilitator your GitHub username."
-            exit 1
+            fail "GitHub user '$AUTHOR' is not in roster.csv yet." \
+          "### 🤖 Not on the class list yet
+          Hi @$AUTHOR! Your GitHub username is not on the class list yet, so I can't check your work.
+
+          **What to do:** tell your facilitator your GitHub username. Once they add it, they will re-run this check. You don't need to do anything else."
           fi
 
           # Every changed path, plus the old path of any renamed or moved file.
@@ -51,11 +70,25 @@ jobs:
           BAD=$(grep -v "^students/$FOLDER/" changed.txt || true)
 
           if [ -n "$BAD" ]; then
-            echo "::error::You can only change files inside students/$FOLDER/"
-            echo ""
-            echo "❌ These files are outside your folder. Move or remove them, then push again:"
-            echo "$BAD" | sed 's/^/   - /'
-            exit 1
+            LIST=$(echo "$BAD" | sed 's/^/- `/; s/$/`/')
+            fail "You can only change files inside students/$FOLDER/" \
+          "### 🤖 A file is in the wrong place
+          Hi @$AUTHOR! Your files must be inside **your own folder**:
+
+          \`students/$FOLDER/\`
+
+          These files are outside it:
+          $LIST
+
+          **Easiest fix:** close this pull request (button at the bottom), then open your folder link below and upload again from there:
+          https://github.com/$GITHUB_REPOSITORY/tree/main/students/$FOLDER
+
+          Stuck? Write a comment here and your facilitator will help. 🙂"
           fi
 
           echo "✅ All $(wc -l < changed.txt | tr -d ' ') changed file(s) are inside students/$FOLDER/"
+          # If an earlier run complained, tell the student it's fixed now.
+          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq '.[].body' | grep -qF "$MARK"; then
+            say "### 🤖 ✅ Fixed!
+          All your files are in your folder now. Your facilitator will review your work soon."
+          fi

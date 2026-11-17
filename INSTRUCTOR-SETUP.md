@@ -102,14 +102,38 @@ bash scripts/invite-students.sh
 
 **Students:** follow [README.md](README.md): branch `week-0X/ID` → PR.
 
-**You:**
-1. Filter PRs by label: https://github.com/Tech4Youth-GIZ-Abuja/tech4youth-training-cohort-2/pulls?q=is%3Apr+label%3Aweek-01
-2. On-time check: compare the time the PR was **opened** with the deadline. Add the `late` label if needed.
-3. Review on the **Files changed** tab:
-   - Changes needed → **Request changes** + `needs-changes` label
-   - Good → **Approve** → **Squash and merge**
-4. Record grades in your **private** sheet, not in the repo, because all students can read it.
-5. End of week: save a snapshot.
+**You: one command**
+```bash
+bash scripts/review.sh
+```
+It shows the queue, then walks you through each ready PR, oldest first:
+
+```
+Ready for you (8)                    ← folder-guard passed, your turn
+Waiting on student (2)               ← you asked for changes, they haven't pushed yet
+Blocked by folder-guard (1)          ← the bot has already commented with the fix
+```
+
+For each PR you see the student's name and ID, their notes, the files and the text changes. Press one key:
+
+| Key | What happens |
+|---|---|
+| `a` | Approve with a friendly message (plus an optional personal note), then squash-merge |
+| `c` | Pick from ready-made fixes (hidden `<!-- -->` text, wrong folder, missing `lab/` `homework/` folder, empty description) or type your own. The comment tells them how to fix it **on the same branch** |
+| `d` | Close a duplicate PR and tell them which one to keep |
+| `o` | Open in the browser (needed for `.docx`, `.sb3` and images) |
+| `s` / `q` | Skip / quit |
+
+- When a student pushes a fix, their PR moves back to **Ready** on its own.
+- `bash scripts/review.sh list` shows only the queue. `bash scripts/review.sh 12` reviews only PR #12.
+- Every decision is added to **`../review-log.csv`**, outside the public repo. Use it for grades and attendance.
+- **folder-guard explains itself.** When it fails, it posts a plain-English comment on the PR with the wrong files and a link to the student's folder, and updates the comment to "✅ Fixed!" once they fix it. You don't need to reply to blocked PRs unless the student asks for help.
+
+**Rhythm:** run it once after class and once before the next class. A batch of 29 intros takes about 15 minutes.
+
+**End of week:**
+1. On-time check: the `late` label is still manual. Compare the time the PR was **opened** with the deadline.
+2. Save a snapshot:
    ```bash
    bash scripts/tag-week.sh 01
    ```

@@ -26,7 +26,7 @@ jobs:
           labels=""
 
           # Weeks found in changed file paths, plus the branch name.
-          weeks=$( { echo "$files"; echo "$BRANCH"; } | grep -oE 'week-0[1-8]' | sort -u || true)
+          weeks=$( { echo "$files"; echo "$BRANCH"; } | grep -ioE 'week-0[1-8]' | tr '[:upper:]' '[:lower:]' | sort -u || true)
           for w in $weeks; do labels="$labels,$w"; done
 
           echo "$files" | grep -qE '/week-0[1-8]/lab/'      && labels="$labels,lab"      || true
